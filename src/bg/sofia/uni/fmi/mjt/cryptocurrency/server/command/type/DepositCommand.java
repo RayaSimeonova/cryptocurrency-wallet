@@ -6,7 +6,7 @@ import java.net.SocketAddress;
 import java.util.Objects;
 
 public class DepositCommand extends AbstractCommand {
-    private double balance;
+    private final double balance;
 
     public DepositCommand(double balance, CommandExecutor commandExecutor) {
         super(CommandType.DEPOSIT, commandExecutor);

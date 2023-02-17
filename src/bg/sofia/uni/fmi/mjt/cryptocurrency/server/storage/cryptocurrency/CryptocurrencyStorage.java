@@ -2,6 +2,7 @@ package bg.sofia.uni.fmi.mjt.cryptocurrency.server.storage.cryptocurrency;
 
 import bg.sofia.uni.fmi.mjt.cryptocurrency.server.dto.Cryptocurrency;
 import bg.sofia.uni.fmi.mjt.cryptocurrency.server.exception.command.CryptocurrencyNotFoundException;
+import bg.sofia.uni.fmi.mjt.cryptocurrency.server.exception.command.CryptocurrencyUnavailable;
 
 import java.net.http.HttpClient;
 import java.util.Collection;
@@ -10,39 +11,52 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
-import java.util.logging.Level;
-import java.util.logging.Logger;
+import java.util.stream.Collectors;
 
-public class CryptocurrencyStorage {
-    private static final int CRYPTOCURRENCIES_UPDATE_PERIOD = 30;
-    private static final int CRYPTOCURRENCIES_UPDATE_INITIAL_DELAY = 0;
-    private final ScheduledExecutorService scheduler;
-    private final CryptocurrenciesRequestHandler cryptocurrenciesRequestHandler;
+public class CryptocurrencyStorage implements CryptocurrencyObserver {
+//    private static final int CRYPTOCURRENCIES_UPDATE_PERIOD = 30;
+//    private static final int CRYPTOCURRENCIES_UPDATE_INITIAL_DELAY = 0;
+//    private final ScheduledExecutorService scheduler;
+//    private final CryptocurrencyClient cryptocurrencyClient;
+//    private final HttpClient httpClient;
+    private static final int MAX_CRYPTOCURRENCY_COUNT_TO_DISPLAY = 50;
     private final Map<String, Cryptocurrency> cryptocurrencies;
-    private final HttpClient cryptocurrenciesClient;
 
-    public CryptocurrencyStorage(ScheduledExecutorService scheduler) {
+    public CryptocurrencyStorage() {
 
         cryptocurrencies = Collections.synchronizedMap(new HashMap<>());
-        cryptocurrenciesClient = HttpClient.newBuilder().build();
+//        httpClient = HttpClient.newBuilder().build();
 
-        cryptocurrenciesRequestHandler =
-            new CryptocurrenciesRequestHandler(cryptocurrencies, cryptocurrenciesClient);
+//        cryptocurrencyClient = new CryptocurrencyClient(httpClient);
+//        cryptocurrencyClient.registerObserver(this);
 
-        this.scheduler = scheduler;
-        this.scheduler.scheduleAtFixedRate(cryptocurrenciesRequestHandler, CRYPTOCURRENCIES_UPDATE_INITIAL_DELAY,
-            CRYPTOCURRENCIES_UPDATE_PERIOD, TimeUnit.MINUTES);
+//        this.scheduler = scheduler;
+//        this.scheduler.scheduleAtFixedRate(cryptocurrencyClient, CRYPTOCURRENCIES_UPDATE_INITIAL_DELAY,
+//            CRYPTOCURRENCIES_UPDATE_PERIOD, TimeUnit.MINUTES);
     }
 
-    public Cryptocurrency getCryptocurrency(String cryptoId) throws CryptocurrencyNotFoundException {
+    public Cryptocurrency getCryptocurrency(String cryptoId)
+        throws CryptocurrencyNotFoundException, CryptocurrencyUnavailable {
+        isActive();
         if (!cryptocurrencies.containsKey(cryptoId)) {
             throw new CryptocurrencyNotFoundException(String.format("Cryptocurrency %s is not available.", cryptoId));
         }
         return cryptocurrencies.get(cryptoId);
     }
 
-    public Collection<Cryptocurrency> getAllCryptocurrencies() {
-        return cryptocurrencies.values();
+    public Collection<Cryptocurrency> getAllCryptocurrencies() throws CryptocurrencyUnavailable {
+        isActive();
+        return cryptocurrencies.values().stream().limit(MAX_CRYPTOCURRENCY_COUNT_TO_DISPLAY).toList();
     }
 
+    @Override
+    public void update(Map<String, Cryptocurrency> updatedCryptocurrencies) {
+        cryptocurrencies.putAll(updatedCryptocurrencies);
+    }
+
+    private void isActive() throws CryptocurrencyUnavailable {
+        if (cryptocurrencies.isEmpty()) {
+            throw new CryptocurrencyUnavailable("Cryptocurrencies are not uploaded to storage.");
+        }
+    }
 }

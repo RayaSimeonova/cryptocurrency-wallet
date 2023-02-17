@@ -5,7 +5,7 @@ import bg.sofia.uni.fmi.mjt.cryptocurrency.server.command.CommandExecutor;
 import java.util.Objects;
 
 public abstract class AbstractCommand implements Command {
-    private CommandType commandType;
+    private final CommandType commandType;
     protected CommandExecutor commandExecutor;
 
     public AbstractCommand(CommandType commandType, CommandExecutor commandExecutor) {

@@ -3,9 +3,11 @@ package bg.sofia.uni.fmi.mjt.cryptocurrency.server;
 import bg.sofia.uni.fmi.mjt.cryptocurrency.server.command.CommandCreator;
 import bg.sofia.uni.fmi.mjt.cryptocurrency.server.command.CommandExecutor;
 import bg.sofia.uni.fmi.mjt.cryptocurrency.server.command.type.Command;
-import bg.sofia.uni.fmi.mjt.cryptocurrency.server.exception.http.CryptocurrenciesRequestHandlerException;
-import bg.sofia.uni.fmi.mjt.cryptocurrency.server.storage.users.InMemoryStorage;
+import bg.sofia.uni.fmi.mjt.cryptocurrency.server.exception.command.CommandArgumentsException;
+import bg.sofia.uni.fmi.mjt.cryptocurrency.server.storage.cryptocurrency.CryptocurrencyClient;
+import bg.sofia.uni.fmi.mjt.cryptocurrency.server.storage.users.InMemoryUserStorage;
 import bg.sofia.uni.fmi.mjt.cryptocurrency.server.storage.cryptocurrency.CryptocurrencyStorage;
+import bg.sofia.uni.fmi.mjt.cryptocurrency.server.storage.users.UserStorage;
 
 import java.io.FileNotFoundException;
 import java.io.FileReader;
@@ -15,6 +17,7 @@ import java.io.Reader;
 import java.io.UncheckedIOException;
 import java.io.Writer;
 import java.net.InetSocketAddress;
+import java.net.http.HttpClient;
 import java.nio.ByteBuffer;
 import java.nio.channels.SelectionKey;
 import java.nio.channels.Selector;
@@ -22,8 +25,10 @@ import java.nio.channels.ServerSocketChannel;
 import java.nio.channels.SocketChannel;
 import java.nio.charset.StandardCharsets;
 import java.util.Iterator;
+import java.util.Scanner;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.TimeUnit;
 import java.util.logging.FileHandler;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -37,35 +42,28 @@ public class Server {
     private static final String DB_FILENAME = "db.json";
     private static final String LOG_FILENAME = "cryptocurrency.log";
     private final CommandExecutor commandExecutor;
-    private final InMemoryStorage inMemoryStorage;
+    private final UserStorage userStorage;
     private final CryptocurrencyStorage cryptocurrencyStorage;
     private final ScheduledExecutorService scheduler;
 
-    private final Logger logger;
+    private static final int CRYPTOCURRENCIES_UPDATE_PERIOD = 30;
+    private static final int CRYPTOCURRENCIES_UPDATE_INITIAL_DELAY = 0;
+    private CryptocurrencyClient cryptocurrencyClient;
+
+    private Logger logger;
     private boolean isServerWorking;
     private ByteBuffer buffer;
     private Selector selector;
 
     public Server() {
-        inMemoryStorage = new InMemoryStorage();
-
-        try {
-            logger = Logger.getLogger(Server.class.getName());
-            logger.addHandler(new FileHandler(LOG_FILENAME));
-        } catch (IOException e) {
-            throw new UncheckedIOException("failed to open the log file", e);
-        } catch (SecurityException e) {
-            throw new RuntimeException("No security permissions", e);
-        }
-
+        userStorage = new InMemoryUserStorage();
+        cryptocurrencyStorage = new CryptocurrencyStorage();
         scheduler = Executors.newSingleThreadScheduledExecutor();
-        try {
-            cryptocurrencyStorage = new CryptocurrencyStorage(scheduler);
-        } catch (CryptocurrenciesRequestHandlerException e) {
-            logger.log(Level.SEVERE, "Problem with HTTP communication", e);
-            throw new RuntimeException("Problem with HTTP communication", e);
-        }
-        this.commandExecutor = new CommandExecutor(inMemoryStorage, cryptocurrencyStorage, logger);
+
+        logger = ConfiguredLoggerCreator.newLogger(Server.class.getName(), LOG_FILENAME);
+        configCryptocurrencyClient();
+
+        this.commandExecutor = new CommandExecutor(userStorage, cryptocurrencyStorage, logger);
     }
 
     public void start() {
@@ -74,7 +72,7 @@ public class Server {
             configureServerSocketChannel(serverSocketChannel, selector);
             this.buffer = ByteBuffer.allocate(BUFFER_SIZE);
             isServerWorking = true;
-            configInMemoryStorage();
+            configUserStorage();
 
             while (isServerWorking) {
                 try {
@@ -87,6 +85,9 @@ public class Server {
                     while (keyIterator.hasNext()) {
                         SelectionKey key = keyIterator.next();
                         if (key.isReadable()) {
+//                            if (key.channel() instanceof ServerSocketChannel) {
+//                                String clientInput = getClientInput(key.channel());
+//                            }
                             SocketChannel clientChannel = (SocketChannel) key.channel();
                             String clientInput = getClientInput(clientChannel);
                             if (clientInput == null) {
@@ -112,6 +113,8 @@ public class Server {
         stopWithoutUpdatingDB();
     }
 
+
+
     private void stopWithoutUpdatingDB() {
         scheduler.shutdown();
         this.isServerWorking = false;
@@ -122,15 +125,15 @@ public class Server {
 
     private void saveUserStorage() {
         try (Writer writer = new FileWriter(DB_FILENAME)) {
-            inMemoryStorage.uploadToDB(writer);
+            userStorage.uploadToDB(writer);
         } catch (IOException e) {
             logger.log(Level.SEVERE, "Couldn't save user storage to the database file.", e);
         }
     }
 
-    private void configInMemoryStorage() {
+    private void configUserStorage() {
         try (Reader reader = new FileReader(DB_FILENAME)) {
-            inMemoryStorage.uploadFromDB(reader);
+            userStorage.uploadFromDB(reader);
         } catch (FileNotFoundException e) {
             logger.log(Level.SEVERE, "Database file not found.", e);
             stopWithoutUpdatingDB();
@@ -138,6 +141,32 @@ public class Server {
             logger.log(Level.SEVERE, "Couldn't load database.", e);
             stopWithoutUpdatingDB();
         }
+    }
+//    private void configLogger() {
+//        try {
+//            logger = Logger.getLogger(Server.class.getName());
+//            logger.addHandler(new FileHandler(LOG_FILENAME, true));
+//            logger.setUseParentHandlers(false);
+//        } catch (IOException e) {
+//            throw new UncheckedIOException("Failed to open the log file", e);
+//        } catch (SecurityException e) {
+//            throw new RuntimeException("No security permissions", e);
+//        }
+//    }
+    private void configCryptocurrencyClient() {
+        final var httpClient = HttpClient.newBuilder().build();
+        cryptocurrencyClient = new CryptocurrencyClient(httpClient);
+        cryptocurrencyClient.registerObserver(cryptocurrencyStorage);
+        scheduler.scheduleAtFixedRate(cryptocurrencyClient, CRYPTOCURRENCIES_UPDATE_INITIAL_DELAY,
+            CRYPTOCURRENCIES_UPDATE_PERIOD, TimeUnit.MINUTES);
+
+//        try {
+//            cryptocurrencyStorage = new CryptocurrencyStorage(scheduler);
+//        } catch (CryptocurrenciesRequestHandlerException e) {
+//            logger.log(Level.SEVERE, "Problem with HTTP communication", e);
+//            throw new RuntimeException("Problem with HTTP communication", e);
+//        }
+//        this.commandExecutor = new CommandExecutor(userStorage, cryptocurrencyStorage, logger);
     }
 
     private void configureServerSocketChannel(ServerSocketChannel channel, Selector selector) throws IOException {
@@ -167,9 +196,16 @@ public class Server {
         try {
             Command command = CommandCreator.newCommand(clientInput, commandExecutor);
             return command.execute(clientChannel.getRemoteAddress());
-        } catch (Exception e) {
+        } catch (NumberFormatException e) {
+            return "Invalid input for expected number argument" + OUTPUT_END;
+        } catch (CommandArgumentsException e) { //illigal arg from command
             logger.log(Level.INFO, e.getMessage(), e);
             return e.getMessage() + OUTPUT_END;
+        } catch (IOException e) {
+            logger.log(Level.INFO, String.format("User client channel: < %s > %s",
+                clientChannel, System.lineSeparator() + e.getMessage()), e);
+            return "Server could not identify you while trying to process your input. Try again later, please!"
+                + OUTPUT_END;
         }
     }
     private void writeClientOutput(SocketChannel clientChannel, String output) throws IOException {

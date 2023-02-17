@@ -1,10 +1,6 @@
 package bg.sofia.uni.fmi.mjt.cryptocurrency.server.storage.cryptocurrency;
 
 import bg.sofia.uni.fmi.mjt.cryptocurrency.server.dto.Cryptocurrency;
-import bg.sofia.uni.fmi.mjt.cryptocurrency.server.exception.http.CryptocurrenciesRequestHandlerException;
-import bg.sofia.uni.fmi.mjt.cryptocurrency.server.exception.http.ForbiddenResourseException;
-import bg.sofia.uni.fmi.mjt.cryptocurrency.server.exception.http.UnauthorizedApiKeyException;
-import bg.sofia.uni.fmi.mjt.cryptocurrency.server.exception.http.WrongRequestException;
 import com.google.gson.Gson;
 import com.google.gson.reflect.TypeToken;
 import java.lang.reflect.Type;
@@ -15,9 +11,7 @@ import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
 import java.util.*;
 
-public class CryptocurrenciesRequestHandler implements Runnable {
-    private final Map<String, Cryptocurrency> cryptocurrencies;
-
+public class CryptocurrencyClient implements Runnable {
     //paste-your-API-key-here
     private static final String API_KEY = "D9FB62E2-FF6B-41BF-B8D9-C3A14B40CF92";
     private static final String API_KEY_HEADER_NAME = "X-CoinAPI-Key";
@@ -25,12 +19,13 @@ public class CryptocurrenciesRequestHandler implements Runnable {
     private static final String API_ENDPOINT_HOST = "rest.coinapi.io";
     private static final String API_ENDPOINT_PATH = "/v1/assets";
     private static final Gson GSON = new Gson();
-    private static final int MAX_RESPONSE_SIZE = 50;
+//    private static final int MAX_RESPONSE_SIZE = 50;
     private final HttpClient cryptocurrencyHttpClient;
+    private final List<CryptocurrencyObserver> observers;
 
-    public CryptocurrenciesRequestHandler(Map<String, Cryptocurrency> cryptocurrencies, HttpClient client) {
-        this.cryptocurrencies = cryptocurrencies;
+    public CryptocurrencyClient(HttpClient client) {
         this.cryptocurrencyHttpClient = client;
+        observers = new ArrayList<>();
     }
 
     @Override
@@ -47,20 +42,17 @@ public class CryptocurrenciesRequestHandler implements Runnable {
         }
 
         if (response.statusCode() == HttpURLConnection.HTTP_OK) {
-
             Type type = new TypeToken<List<Cryptocurrency>>() {
             }.getType();
 
             List<Cryptocurrency> receivedCryptocurrencies = GSON.fromJson(response.body(), type);
             Map<String, Cryptocurrency> receivedCryptocurrenciesMap = new HashMap<>();
 
-
             receivedCryptocurrencies.stream()
                 .filter(cryptocurrency -> cryptocurrency.isCrypto() == 1)
-                .limit(MAX_RESPONSE_SIZE)
                 .forEach(cryptocurrency -> receivedCryptocurrenciesMap.put(cryptocurrency.assetId(), cryptocurrency));
 
-            cryptocurrencies.putAll(receivedCryptocurrenciesMap);
+            notifyObservers(receivedCryptocurrenciesMap);
 
         } else {
             throw new RuntimeException("nothing");
@@ -68,6 +60,17 @@ public class CryptocurrenciesRequestHandler implements Runnable {
 
         //handleErrorStatusCodes(response.statusCode());
     }
+
+    public void registerObserver(CryptocurrencyObserver observer) {
+        observers.add(observer);
+    }
+
+    private void notifyObservers(Map<String, Cryptocurrency> receivedCryptocurrenciesMap) {
+        for (CryptocurrencyObserver observer : observers) {
+            observer.update(receivedCryptocurrenciesMap);
+        }
+    }
+
 
 //    private void handleErrorStatusCodes(int statusCode) throws CryptocurrenciesRequestHandlerException {
 //        if (statusCode == HttpURLConnection.HTTP_BAD_REQUEST) {

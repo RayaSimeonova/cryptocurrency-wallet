@@ -7,13 +7,13 @@ import java.util.Map;
 
 public class Wallet {
     private double balance;
-    private Map<String, List<StockInfo>> cryptocurrencies;
+    private final Map<String, List<StockInfo>> cryptocurrencies;
 
     public Wallet() {
         cryptocurrencies = new HashMap<>();
     }
 
-    public void addMoney(Double money) {
+    public void addMoney(double money) {
         balance += money;
     }
 
@@ -25,13 +25,18 @@ public class Wallet {
         List<StockInfo> stockInfos = cryptocurrencies.remove(cryptoId);
 
         for (StockInfo stockInfo : stockInfos) {
-            addMoney(stockInfo.getQuantity() * sellingPrice);
+            addMoney(stockInfo.quantity() * sellingPrice);
         }
     }
 
     public void addCryptocurrency(String cryptoId, double buyingPrice, double money) {
-        balance -= money;
-        double boughtQuantity = money / buyingPrice;
+        double boughtQuantity;
+        if (buyingPrice > 0) {
+            balance -= money;
+            boughtQuantity = money / buyingPrice;
+        } else {
+            boughtQuantity = money;
+        }
         StockInfo stockInfo = new StockInfo(boughtQuantity, buyingPrice);
 
         cryptocurrencies.putIfAbsent(cryptoId, new ArrayList<>());

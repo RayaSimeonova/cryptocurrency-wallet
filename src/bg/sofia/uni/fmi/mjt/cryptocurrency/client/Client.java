@@ -39,9 +39,6 @@ public class Client {
             }
         } catch (IOException e) {
             System.out.println("Unable to connect to the server. Please try again later.");
-            //system.err?
-            //log error?
-            //throw new RuntimeException("There is a problem with the network communication", e);
         }
     }
 

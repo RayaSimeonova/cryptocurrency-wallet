@@ -6,8 +6,8 @@ import java.net.SocketAddress;
 import java.util.Objects;
 
 public class LoginCommand extends AbstractCommand {
-    private String username;
-    private String password;
+    private final String username;
+    private final String password;
 
     public LoginCommand(String username, String password, CommandExecutor commandExecutor) {
         super(CommandType.LOGIN, commandExecutor);

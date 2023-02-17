@@ -6,8 +6,8 @@ import java.net.SocketAddress;
 import java.util.Objects;
 
 public class BuyCommand extends AbstractCommand {
-    private String cryptocurrencyCode;
-    private double money;
+    private final String cryptocurrencyCode;
+    private final double money;
 
     public BuyCommand(String cryptocurrencyCode, double money, CommandExecutor commandExecutor) {
         super(CommandType.BUY, commandExecutor);
@@ -15,7 +15,6 @@ public class BuyCommand extends AbstractCommand {
         this.cryptocurrencyCode = cryptocurrencyCode;
         this.money = money;
     }
-
 
     @Override
     public String execute(SocketAddress userAddress) {

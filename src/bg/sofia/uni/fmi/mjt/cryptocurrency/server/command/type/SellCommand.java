@@ -6,7 +6,7 @@ import java.net.SocketAddress;
 import java.util.Objects;
 
 public class SellCommand extends AbstractCommand {
-    private String cryptocurrencyCode;
+    private final String cryptocurrencyCode;
 
     public SellCommand(String cryptocurrencyCode, CommandExecutor commandExecutor) {
         super(CommandType.SELL, commandExecutor);

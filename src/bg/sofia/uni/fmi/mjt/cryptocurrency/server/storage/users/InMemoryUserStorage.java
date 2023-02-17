@@ -18,14 +18,27 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-public class InMemoryStorage {
+public class InMemoryUserStorage implements UserStorage {
     private static final Gson GSON = new GsonBuilder().enableComplexMapKeySerialization().setPrettyPrinting().create();
     private Map<User, Wallet> userWallet;
 
-    public InMemoryStorage() {
+    public InMemoryUserStorage() {
         userWallet = new HashMap<>();
     }
 
+    @Override
+    public void uploadFromDB(Reader reader) {
+        Type type = new TypeToken<Map<User, Wallet>>() {
+        }.getType();
+        userWallet = GSON.fromJson(reader, type);
+    }
+
+    @Override
+    public void uploadToDB(Writer writer) {
+        GSON.toJson(userWallet, writer);
+    }
+
+    @Override
     public void addUser(User user) throws UserAlreadyRegisteredException {
         boolean usernameExists = userWallet.keySet().stream().anyMatch(user1 -> user1.hasSameUsername(user));
         if (usernameExists) {
@@ -34,41 +47,23 @@ public class InMemoryStorage {
         userWallet.put(user, new Wallet());
     }
 
-    public void uploadFromDB(Reader reader) {
-        //TODO
-//        try {
-        Type type = new TypeToken<Map<User, Wallet>>() {
-        }.getType();
-        //Reader reader = new FileReader(filename);
-        userWallet = GSON.fromJson(reader, type);
-//        } catch (FileNotFoundException e) {
-//            return;
-//        }
-    }
-
-    public void uploadToDB(Writer writer) {
-        //TODO
-        //try (Writer writer = new FileWriter(filename)) {
-        GSON.toJson(userWallet, writer);
-        //} catch (IOException e) {
-            //log
-            return;
-        //}
-    }
-
+    @Override
     public boolean containsUser(User user) {
         return userWallet.containsKey(user);
     }
 
-    public void addMoneyToWallet(User user, Double money) {
+    @Override
+    public void addMoneyToWallet(User user, double money) {
         validateMoneyIsPositive(money);
         userWallet.get(user).addMoney(money);
     }
 
-    public Double getWalletBalance(User user) {
+    @Override
+    public double getWalletBalance(User user) {
         return userWallet.get(user).getBalance();
     }
 
+    @Override
     public void sellCryptocurrencyFromWallet(User user, Cryptocurrency cryptocurrency)
         throws CryptocurrencyNotFoundException {
         if (!userWallet.get(user).containsCryptocurrency(cryptocurrency.assetId())) {
@@ -78,10 +73,12 @@ public class InMemoryStorage {
         userWallet.get(user).removeCryptocurrency(cryptocurrency.assetId(), cryptocurrency.priceUsd());
     }
 
+    @Override
     public Map<String, List<StockInfo>> getInvestments(User user) {
         return userWallet.get(user).getCryptocurrencies();
     }
 
+    @Override
     public void buyCryptocurrency(User user, Cryptocurrency cryptocurrency, double money)
         throws NotEnoughMoneyException {
         validateMoneyIsPositive(money);
@@ -91,13 +88,13 @@ public class InMemoryStorage {
         userWallet.get(user).addCryptocurrency(cryptocurrency.assetId(), cryptocurrency.priceUsd(), money);
     }
 
-    public int getSize() {
+    public int getUsersCount() {
         return userWallet.size();
     }
 
     private void validateMoneyIsPositive(double money) {
         if (money <= 0) {
-            throw new IllegalArgumentException("Money to be added to user wallet must be a positive integer.");
+            throw new IllegalArgumentException("Money argument must be a positive integer.");
         }
     }
 }
