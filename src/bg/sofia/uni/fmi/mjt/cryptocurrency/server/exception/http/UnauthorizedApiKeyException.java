@@ -1,7 +1,7 @@
 package bg.sofia.uni.fmi.mjt.cryptocurrency.server.exception.http;
 
 public class UnauthorizedApiKeyException
-    extends CryptocurrenciesRequestHandlerException {
+    extends CryptocurrencyClientException {
     public UnauthorizedApiKeyException(String message) {
         super(message);
     }

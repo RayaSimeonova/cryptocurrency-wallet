@@ -15,11 +15,10 @@ public class ServerStopScanner implements Runnable {
     @Override
     public void run() {
         String serverInput;
-
         do {
             serverInput = scanner.nextLine();
         } while (!serverInput.equalsIgnoreCase(STOP_WORD));
-
+        System.out.println("Stopping server...");
         server.stop();
     }
 }

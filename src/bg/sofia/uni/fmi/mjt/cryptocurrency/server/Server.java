@@ -14,7 +14,6 @@ import java.io.FileReader;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.io.Reader;
-import java.io.UncheckedIOException;
 import java.io.Writer;
 import java.net.InetSocketAddress;
 import java.net.http.HttpClient;
@@ -25,11 +24,10 @@ import java.nio.channels.ServerSocketChannel;
 import java.nio.channels.SocketChannel;
 import java.nio.charset.StandardCharsets;
 import java.util.Iterator;
-import java.util.Scanner;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
-import java.util.logging.FileHandler;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -50,15 +48,20 @@ public class Server {
     private static final int CRYPTOCURRENCIES_UPDATE_INITIAL_DELAY = 0;
     private CryptocurrencyClient cryptocurrencyClient;
 
-    private Logger logger;
-    private boolean isServerWorking;
+    private final Logger logger;
+    private AtomicBoolean isServerWorking;
     private ByteBuffer buffer;
     private Selector selector;
+
+    private boolean isUserStorageForSaving;
 
     public Server() {
         userStorage = new InMemoryUserStorage();
         cryptocurrencyStorage = new CryptocurrencyStorage();
         scheduler = Executors.newSingleThreadScheduledExecutor();
+
+        isServerWorking = new AtomicBoolean();
+        isUserStorageForSaving = true;
 
         logger = ConfiguredLoggerCreator.newLogger(Server.class.getName(), LOG_FILENAME);
         configCryptocurrencyClient();
@@ -71,10 +74,10 @@ public class Server {
             selector = Selector.open();
             configureServerSocketChannel(serverSocketChannel, selector);
             this.buffer = ByteBuffer.allocate(BUFFER_SIZE);
-            isServerWorking = true;
+            isServerWorking.set(true);
             configUserStorage();
 
-            while (isServerWorking) {
+            while (isServerWorking.get()) {
                 try {
                     int readyChannels = selector.select();
                     if (readyChannels == 0) {
@@ -85,9 +88,6 @@ public class Server {
                     while (keyIterator.hasNext()) {
                         SelectionKey key = keyIterator.next();
                         if (key.isReadable()) {
-//                            if (key.channel() instanceof ServerSocketChannel) {
-//                                String clientInput = getClientInput(key.channel());
-//                            }
                             SocketChannel clientChannel = (SocketChannel) key.channel();
                             String clientInput = getClientInput(clientChannel);
                             if (clientInput == null) {
@@ -103,31 +103,27 @@ public class Server {
                     logger.log(Level.SEVERE, e.getMessage(), e);
                 }
             }
+            saveUserStorage();
+            scheduler.shutdown();
         } catch (IOException e) {
-            logger.log(Level.SEVERE, "failed to start server", e);
+            logger.log(Level.SEVERE, "Failed to start server", e);
         }
     }
 
     public void stop() {
-        saveUserStorage();
-        stopWithoutUpdatingDB();
-    }
-
-
-
-    private void stopWithoutUpdatingDB() {
-        scheduler.shutdown();
-        this.isServerWorking = false;
+        this.isServerWorking.set(false);
         if (selector.isOpen()) {
             selector.wakeup();
         }
     }
 
     private void saveUserStorage() {
-        try (Writer writer = new FileWriter(DB_FILENAME)) {
-            userStorage.uploadToDB(writer);
-        } catch (IOException e) {
-            logger.log(Level.SEVERE, "Couldn't save user storage to the database file.", e);
+        if (isUserStorageForSaving) {
+            try (Writer writer = new FileWriter(DB_FILENAME)) {
+                userStorage.uploadToDB(writer);
+            } catch (IOException e) {
+                logger.log(Level.SEVERE, "Couldn't save user storage to the database file.", e);
+            }
         }
     }
 
@@ -136,23 +132,14 @@ public class Server {
             userStorage.uploadFromDB(reader);
         } catch (FileNotFoundException e) {
             logger.log(Level.SEVERE, "Database file not found.", e);
-            stopWithoutUpdatingDB();
+            isUserStorageForSaving = false;
+            stop();
         } catch (IOException e) {
             logger.log(Level.SEVERE, "Couldn't load database.", e);
-            stopWithoutUpdatingDB();
-        }
+            isUserStorageForSaving = false;
+            stop();        }
     }
-//    private void configLogger() {
-//        try {
-//            logger = Logger.getLogger(Server.class.getName());
-//            logger.addHandler(new FileHandler(LOG_FILENAME, true));
-//            logger.setUseParentHandlers(false);
-//        } catch (IOException e) {
-//            throw new UncheckedIOException("Failed to open the log file", e);
-//        } catch (SecurityException e) {
-//            throw new RuntimeException("No security permissions", e);
-//        }
-//    }
+
     private void configCryptocurrencyClient() {
         final var httpClient = HttpClient.newBuilder().build();
         cryptocurrencyClient = new CryptocurrencyClient(httpClient);
@@ -198,8 +185,8 @@ public class Server {
             return command.execute(clientChannel.getRemoteAddress());
         } catch (NumberFormatException e) {
             return "Invalid input for expected number argument" + OUTPUT_END;
-        } catch (CommandArgumentsException e) { //illigal arg from command
-            logger.log(Level.INFO, e.getMessage(), e);
+        } catch (CommandArgumentsException | IllegalArgumentException e) {
+            logger.log(Level.INFO, e.getMessage(), e); //NOOOO
             return e.getMessage() + OUTPUT_END;
         } catch (IOException e) {
             logger.log(Level.INFO, String.format("User client channel: < %s > %s",
