@@ -165,6 +165,10 @@ public class InMemoryUserStorageTest {
             () -> inMemoryUserStorage.buyCryptocurrency(userInStorage, cryptocurrency, moneyToSpend),
             "Method should throw IllegalArgumentException when money is less than or equals to 0.");
     }
+    @Test
+    void testBuyCryptocurrencyWithPriceZero() {
+
+    }
 
     @Test
     void testSellCryptocurrencyNotInWallet() {

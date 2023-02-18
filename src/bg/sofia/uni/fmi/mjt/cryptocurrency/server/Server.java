@@ -4,11 +4,11 @@ import bg.sofia.uni.fmi.mjt.cryptocurrency.server.command.CommandCreator;
 import bg.sofia.uni.fmi.mjt.cryptocurrency.server.command.CommandExecutor;
 import bg.sofia.uni.fmi.mjt.cryptocurrency.server.command.type.Command;
 import bg.sofia.uni.fmi.mjt.cryptocurrency.server.exception.command.CommandArgumentsException;
+import bg.sofia.uni.fmi.mjt.cryptocurrency.server.exception.http.CryptocurrencyClientException;
 import bg.sofia.uni.fmi.mjt.cryptocurrency.server.storage.cryptocurrency.CryptocurrencyClient;
 import bg.sofia.uni.fmi.mjt.cryptocurrency.server.storage.users.InMemoryUserStorage;
 import bg.sofia.uni.fmi.mjt.cryptocurrency.server.storage.cryptocurrency.CryptocurrencyStorage;
 import bg.sofia.uni.fmi.mjt.cryptocurrency.server.storage.users.UserStorage;
-
 import java.io.FileNotFoundException;
 import java.io.FileReader;
 import java.io.FileWriter;
@@ -46,10 +46,9 @@ public class Server {
 
     private static final int CRYPTOCURRENCIES_UPDATE_PERIOD = 30;
     private static final int CRYPTOCURRENCIES_UPDATE_INITIAL_DELAY = 0;
-    private CryptocurrencyClient cryptocurrencyClient;
 
     private final Logger logger;
-    private AtomicBoolean isServerWorking;
+    private final AtomicBoolean isServerWorking;
     private ByteBuffer buffer;
     private Selector selector;
 
@@ -134,6 +133,8 @@ public class Server {
             logger.log(Level.SEVERE, "Database file not found.", e);
             isUserStorageForSaving = false;
             stop();
+//            File yourFile = new File("score.txt");
+//            yourFile.createNewFile(); // if file already exists will do nothing
         } catch (IOException e) {
             logger.log(Level.SEVERE, "Couldn't load database.", e);
             isUserStorageForSaving = false;
@@ -142,18 +143,15 @@ public class Server {
 
     private void configCryptocurrencyClient() {
         final var httpClient = HttpClient.newBuilder().build();
-        cryptocurrencyClient = new CryptocurrencyClient(httpClient);
+        final var cryptocurrencyClient = new CryptocurrencyClient(httpClient);
         cryptocurrencyClient.registerObserver(cryptocurrencyStorage);
-        scheduler.scheduleAtFixedRate(cryptocurrencyClient, CRYPTOCURRENCIES_UPDATE_INITIAL_DELAY,
-            CRYPTOCURRENCIES_UPDATE_PERIOD, TimeUnit.MINUTES);
-
-//        try {
-//            cryptocurrencyStorage = new CryptocurrencyStorage(scheduler);
-//        } catch (CryptocurrenciesRequestHandlerException e) {
-//            logger.log(Level.SEVERE, "Problem with HTTP communication", e);
-//            throw new RuntimeException("Problem with HTTP communication", e);
-//        }
-//        this.commandExecutor = new CommandExecutor(userStorage, cryptocurrencyStorage, logger);
+        try {
+            scheduler.scheduleAtFixedRate(cryptocurrencyClient, CRYPTOCURRENCIES_UPDATE_INITIAL_DELAY,
+                CRYPTOCURRENCIES_UPDATE_PERIOD, TimeUnit.MINUTES);
+        } catch (CryptocurrencyClientException e) {
+            logger.log(Level.SEVERE, "Problem with HTTP communication", e);
+//            stop();
+        }
     }
 
     private void configureServerSocketChannel(ServerSocketChannel channel, Selector selector) throws IOException {
@@ -186,7 +184,6 @@ public class Server {
         } catch (NumberFormatException e) {
             return "Invalid input for expected number argument" + OUTPUT_END;
         } catch (CommandArgumentsException | IllegalArgumentException e) {
-            logger.log(Level.INFO, e.getMessage(), e); //NOOOO
             return e.getMessage() + OUTPUT_END;
         } catch (IOException e) {
             logger.log(Level.INFO, String.format("User client channel: < %s > %s",

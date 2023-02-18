@@ -1,17 +1,20 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <project version="4">
   <component name="ChangeListManager">
-    <list default="true" id="a59d4dfc-daa0-4ed4-9ab0-f558967f828b" name="Changes" comment="reformed">
+    <list default="true" id="a59d4dfc-daa0-4ed4-9ab0-f558967f828b" name="Changes" comment="added server stop">
+      <change afterPath="$PROJECT_DIR$/test/bg/sofia/uni/fmi/mjt/cryptocurrency/storage/cryptocurrency/CryptocurrencyClientTest.java" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/test/bg/sofia/uni/fmi/mjt/cryptocurrency/storage/cryptocurrency/CryptocurrencyStorageTest.java" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/bg/sofia/uni/fmi/mjt/cryptocurrency/client/Client.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/bg/sofia/uni/fmi/mjt/cryptocurrency/client/Client.java" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/src/bg/sofia/uni/fmi/mjt/cryptocurrency/server/Server.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/bg/sofia/uni/fmi/mjt/cryptocurrency/server/Server.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/bg/sofia/uni/fmi/mjt/cryptocurrency/server/ServerStopScanner.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/bg/sofia/uni/fmi/mjt/cryptocurrency/server/ServerStopScanner.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/bg/sofia/uni/fmi/mjt/cryptocurrency/server/exception/http/CryptocurrenciesRequestHandlerException.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/bg/sofia/uni/fmi/mjt/cryptocurrency/server/exception/http/CryptocurrencyClientException.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/bg/sofia/uni/fmi/mjt/cryptocurrency/server/exception/http/ForbiddenResourseException.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/bg/sofia/uni/fmi/mjt/cryptocurrency/server/exception/http/ForbiddenResourceException.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/bg/sofia/uni/fmi/mjt/cryptocurrency/server/exception/http/UnauthorizedApiKeyException.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/bg/sofia/uni/fmi/mjt/cryptocurrency/server/exception/http/UnauthorizedApiKeyException.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/bg/sofia/uni/fmi/mjt/cryptocurrency/server/exception/http/WrongRequestException.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/bg/sofia/uni/fmi/mjt/cryptocurrency/server/exception/http/WrongRequestException.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/bg/sofia/uni/fmi/mjt/cryptocurrency/server/command/CommandExecutor.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/bg/sofia/uni/fmi/mjt/cryptocurrency/server/command/CommandExecutor.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/bg/sofia/uni/fmi/mjt/cryptocurrency/server/exception/command/CryptocurrencyUnavailable.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/bg/sofia/uni/fmi/mjt/cryptocurrency/server/exception/command/CryptocurrencyUnavailableException.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/bg/sofia/uni/fmi/mjt/cryptocurrency/server/exception/command/UserLoggedException.java" beforeDir="false" />
       <change beforePath="$PROJECT_DIR$/src/bg/sofia/uni/fmi/mjt/cryptocurrency/server/storage/cryptocurrency/CryptocurrencyClient.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/bg/sofia/uni/fmi/mjt/cryptocurrency/server/storage/cryptocurrency/CryptocurrencyClient.java" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/src/bg/sofia/uni/fmi/mjt/cryptocurrency/server/storage/cryptocurrency/CryptocurrencyObserver.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/bg/sofia/uni/fmi/mjt/cryptocurrency/server/storage/cryptocurrency/CryptocurrencyObserver.java" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/src/bg/sofia/uni/fmi/mjt/cryptocurrency/server/storage/cryptocurrency/CryptocurrencyStorage.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/bg/sofia/uni/fmi/mjt/cryptocurrency/server/storage/cryptocurrency/CryptocurrencyStorage.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/test/bg/sofia/uni/fmi/mjt/cryptocurrency/command/CommandExecutorTest.java" beforeDir="false" afterPath="$PROJECT_DIR$/test/bg/sofia/uni/fmi/mjt/cryptocurrency/command/CommandExecutorTest.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/test/bg/sofia/uni/fmi/mjt/cryptocurrency/storage/users/InMemoryUserStorageTest.java" beforeDir="false" afterPath="$PROJECT_DIR$/test/bg/sofia/uni/fmi/mjt/cryptocurrency/storage/users/InMemoryUserStorageTest.java" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -99,7 +102,7 @@
         <option name="Make" enabled="true" />
       </method>
     </configuration>
-    <configuration name="CommandExecutorTest.testSellWithNotLoggedUser" type="JUnit" factoryName="JUnit" temporary="true" nameIsGenerated="true">
+    <configuration name="CommandExecutorTest.testRegisterAfterLogin" type="JUnit" factoryName="JUnit" temporary="true" nameIsGenerated="true">
       <module name="CryptocurrencyWallet" />
       <extension name="coverage">
         <pattern>
@@ -109,13 +112,13 @@
       </extension>
       <option name="PACKAGE_NAME" value="bg.sofia.uni.fmi.mjt.cryptocurrency.command" />
       <option name="MAIN_CLASS_NAME" value="bg.sofia.uni.fmi.mjt.cryptocurrency.command.CommandExecutorTest" />
-      <option name="METHOD_NAME" value="testSellWithNotLoggedUser" />
+      <option name="METHOD_NAME" value="testRegisterAfterLogin" />
       <option name="TEST_OBJECT" value="method" />
       <method v="2">
         <option name="Make" enabled="true" />
       </method>
     </configuration>
-    <configuration name="CryptocurrencyRequestHandlerTest.testGetForecastValidCity" type="JUnit" factoryName="JUnit" temporary="true" nameIsGenerated="true">
+    <configuration name="CryptocurrencyStorageTest.testGetCryptocurrencyForValidCryptocurrencyWithIgnoreCase" type="JUnit" factoryName="JUnit" temporary="true" nameIsGenerated="true">
       <module name="CryptocurrencyWallet" />
       <extension name="coverage">
         <pattern>
@@ -124,8 +127,8 @@
         </pattern>
       </extension>
       <option name="PACKAGE_NAME" value="bg.sofia.uni.fmi.mjt.cryptocurrency.storage.cryptocurrency" />
-      <option name="MAIN_CLASS_NAME" value="bg.sofia.uni.fmi.mjt.cryptocurrency.storage.cryptocurrency.CryptocurrencyRequestHandlerTest" />
-      <option name="METHOD_NAME" value="testGetForecastValidCity" />
+      <option name="MAIN_CLASS_NAME" value="bg.sofia.uni.fmi.mjt.cryptocurrency.storage.cryptocurrency.CryptocurrencyStorageTest" />
+      <option name="METHOD_NAME" value="testGetCryptocurrencyForValidCryptocurrencyWithIgnoreCase" />
       <option name="TEST_OBJECT" value="method" />
       <method v="2">
         <option name="Make" enabled="true" />
@@ -136,8 +139,8 @@
         <item itemvalue="Application.ClientMain" />
         <item itemvalue="Application.ServerMain" />
         <item itemvalue="JUnit.All in CryptocurrencyWallet" />
-        <item itemvalue="JUnit.CryptocurrencyRequestHandlerTest.testGetForecastValidCity" />
-        <item itemvalue="JUnit.CommandExecutorTest.testSellWithNotLoggedUser" />
+        <item itemvalue="JUnit.CommandExecutorTest.testRegisterAfterLogin" />
+        <item itemvalue="JUnit.CryptocurrencyStorageTest.testGetCryptocurrencyForValidCryptocurrencyWithIgnoreCase" />
       </list>
     </recent_temporary>
   </component>
@@ -155,7 +158,7 @@
       <workItem from="1676291992353" duration="7447000" />
       <workItem from="1676627027585" duration="23910000" />
       <workItem from="1676657382848" duration="2716000" />
-      <workItem from="1676710843843" duration="4223000" />
+      <workItem from="1676710843843" duration="17542000" />
     </task>
     <task id="LOCAL-00001" summary="CryptocurrenciesRequestHandler doesn't update CryptocurrencyStorage">
       <created>1676627124218</created>
@@ -171,7 +174,14 @@
       <option name="project" value="LOCAL" />
       <updated>1676657620832</updated>
     </task>
-    <option name="localTasksCounter" value="3" />
+    <task id="LOCAL-00003" summary="added server stop">
+      <created>1676715392998</created>
+      <option name="number" value="00003" />
+      <option name="presentableId" value="LOCAL-00003" />
+      <option name="project" value="LOCAL" />
+      <updated>1676715392998</updated>
+    </task>
+    <option name="localTasksCounter" value="4" />
     <servers />
   </component>
   <component name="TypeScriptGeneratedFilesManager">
@@ -225,9 +235,17 @@
   <component name="VcsManagerConfiguration">
     <MESSAGE value="CryptocurrenciesRequestHandler doesn't update CryptocurrencyStorage" />
     <MESSAGE value="reformed" />
-    <option name="LAST_COMMIT_MESSAGE" value="reformed" />
+    <MESSAGE value="added server stop" />
+    <option name="LAST_COMMIT_MESSAGE" value="added server stop" />
+  </component>
+  <component name="XDebuggerManager">
+    <pin-to-top-manager>
+      <pinned-members>
+        <PinnedItemInfo parentTag="bg.sofia.uni.fmi.mjt.cryptocurrency.server.storage.cryptocurrency.CryptocurrencyStorage" memberName="cryptocurrencies" />
+      </pinned-members>
+    </pin-to-top-manager>
   </component>
   <component name="com.intellij.coverage.CoverageDataManagerImpl">
-    <SUITE FILE_PATH="coverage/CryptocurrencyWallet$All_in_CryptocurrencyWallet.ic" NAME="All in CryptocurrencyWallet Coverage Results" MODIFIED="1676685567028" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="idea" COVERAGE_BY_TEST_ENABLED="false" COVERAGE_TRACING_ENABLED="false" />
+    <SUITE FILE_PATH="coverage/CryptocurrencyWallet$All_in_CryptocurrencyWallet.ic" NAME="All in CryptocurrencyWallet Coverage Results" MODIFIED="1676727255774" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="idea" COVERAGE_BY_TEST_ENABLED="false" COVERAGE_TRACING_ENABLED="false" />
   </component>
 </project>

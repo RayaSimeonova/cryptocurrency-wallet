@@ -4,7 +4,7 @@ import bg.sofia.uni.fmi.mjt.cryptocurrency.server.command.CommandExecutor;
 import bg.sofia.uni.fmi.mjt.cryptocurrency.server.dto.Cryptocurrency;
 import bg.sofia.uni.fmi.mjt.cryptocurrency.server.dto.User;
 import bg.sofia.uni.fmi.mjt.cryptocurrency.server.exception.command.CryptocurrencyNotFoundException;
-import bg.sofia.uni.fmi.mjt.cryptocurrency.server.exception.command.CryptocurrencyUnavailable;
+import bg.sofia.uni.fmi.mjt.cryptocurrency.server.exception.command.CryptocurrencyUnavailableException;
 import bg.sofia.uni.fmi.mjt.cryptocurrency.server.exception.command.UserAlreadyRegisteredException;
 import bg.sofia.uni.fmi.mjt.cryptocurrency.server.storage.cryptocurrency.CryptocurrencyStorage;
 import bg.sofia.uni.fmi.mjt.cryptocurrency.server.storage.users.InMemoryUserStorage;
@@ -83,6 +83,18 @@ public class CommandExecutorTest {
     }
 
     @Test
+    void testRegisterAfterLogin() throws NoSuchAlgorithmException, UserAlreadyRegisteredException {
+        User user = new User("whale", "blind");
+        storage.addUser(user);
+        commandExecutor.login(socketAddress, "whale", "blind");
+
+        commandExecutor.register(socketAddress, "whale2", "blind");
+
+        assertEquals(1, commandExecutor.getActiveUserCount(),
+            "User should not be able to register after successful registration.");
+    }
+
+    @Test
     void testLoginUserOk() throws NoSuchAlgorithmException, UserAlreadyRegisteredException {
         storage.addUser(new User("whale", "blind"));
         commandExecutor.login(socketAddress, "whale", "blind");
@@ -103,6 +115,27 @@ public class CommandExecutorTest {
         commandExecutor.login(socketAddress, "whale", "blond");
         assertEquals(0, commandExecutor.getActiveUserCount(),
             "User should not be made active during login if his password is invalid.");
+    }
+
+    @Test
+    void testLoginAfterRegistration() {
+        commandExecutor.register(socketAddress, "whale", "blind");
+        commandExecutor.login(socketAddress, "whale", "blind");
+
+        assertEquals(1, commandExecutor.getActiveUserCount(),
+            "User should not be able to login after successful registration.");
+    }
+
+    @Test
+    void testLoginAfterLogin() throws UserAlreadyRegisteredException, NoSuchAlgorithmException {
+        User user = new User("whale", "blind");
+        storage.addUser(user);
+
+        commandExecutor.login(socketAddress, "whale", "blind");
+        commandExecutor.login(socketAddress, "whale2", "blind");
+
+        assertEquals(1, commandExecutor.getActiveUserCount(),
+            "User should not be able to login after successful login.");
     }
 
     @Test
@@ -127,7 +160,7 @@ public class CommandExecutorTest {
 
     @Test
     void testBuyWithLoggedUser() throws NoSuchAlgorithmException, UserAlreadyRegisteredException,
-        CryptocurrencyNotFoundException, CryptocurrencyUnavailable {
+        CryptocurrencyNotFoundException, CryptocurrencyUnavailableException {
         when(inMemoryCryptocurrencyStorage.getCryptocurrency("BTC")).thenReturn(cryptocurrency);
         User user = new User("whale", "blind");
         storage.addUser(user);
@@ -151,7 +184,7 @@ public class CommandExecutorTest {
 
     @Test
     void testSellWithLoggedUser() throws NoSuchAlgorithmException, UserAlreadyRegisteredException,
-        CryptocurrencyNotFoundException, CryptocurrencyUnavailable {
+        CryptocurrencyNotFoundException, CryptocurrencyUnavailableException {
         when(inMemoryCryptocurrencyStorage.getCryptocurrency("BTC")).thenReturn(cryptocurrency);
         User user = new User("whale", "blind");
         storage.addUser(user);
@@ -188,7 +221,7 @@ public class CommandExecutorTest {
 
     @Test
     void testGetWalletSummaryWithLoggedUser() throws NoSuchAlgorithmException, UserAlreadyRegisteredException,
-        CryptocurrencyNotFoundException, CryptocurrencyUnavailable {
+        CryptocurrencyNotFoundException, CryptocurrencyUnavailableException {
         when(inMemoryCryptocurrencyStorage.getCryptocurrency("BTC")).thenReturn(cryptocurrency);
         User user = new User("whale", "blind");
         storage.addUser(user);
@@ -214,7 +247,7 @@ public class CommandExecutorTest {
 
     @Test
     void testGetWalletOverallSummaryWithLoggedUser() throws NoSuchAlgorithmException, UserAlreadyRegisteredException,
-        CryptocurrencyNotFoundException, CryptocurrencyUnavailable {
+        CryptocurrencyNotFoundException, CryptocurrencyUnavailableException {
         when(inMemoryCryptocurrencyStorage.getCryptocurrency("BTC")).thenReturn(cryptocurrency);
         User user = new User("whale", "blind");
         storage.addUser(user);
@@ -240,7 +273,7 @@ public class CommandExecutorTest {
 
     @Test
     void testListCryptocurrencyWithLoggedUser()
-        throws NoSuchAlgorithmException, UserAlreadyRegisteredException, CryptocurrencyUnavailable {
+        throws NoSuchAlgorithmException, UserAlreadyRegisteredException, CryptocurrencyUnavailableException {
         when(inMemoryCryptocurrencyStorage.getAllCryptocurrencies()).thenReturn(List.of(cryptocurrency));
         User user = new User("whale", "blind");
         storage.addUser(user);
@@ -252,7 +285,7 @@ public class CommandExecutorTest {
 
     @Test
     void testListCryptocurrencyWithNotLoggedUser()
-        throws NoSuchAlgorithmException, UserAlreadyRegisteredException, CryptocurrencyUnavailable {
+        throws NoSuchAlgorithmException, UserAlreadyRegisteredException, CryptocurrencyUnavailableException {
         when(inMemoryCryptocurrencyStorage.getAllCryptocurrencies()).thenReturn(List.of(cryptocurrency));
         User user = new User("whale", "blind");
         storage.addUser(user);

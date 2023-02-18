@@ -2,7 +2,7 @@ package bg.sofia.uni.fmi.mjt.cryptocurrency.server.storage.cryptocurrency;
 
 import bg.sofia.uni.fmi.mjt.cryptocurrency.server.dto.Cryptocurrency;
 import bg.sofia.uni.fmi.mjt.cryptocurrency.server.exception.command.CryptocurrencyNotFoundException;
-import bg.sofia.uni.fmi.mjt.cryptocurrency.server.exception.command.CryptocurrencyUnavailable;
+import bg.sofia.uni.fmi.mjt.cryptocurrency.server.exception.command.CryptocurrencyUnavailableException;
 
 
 import java.util.Collection;
@@ -20,15 +20,16 @@ public class CryptocurrencyStorage implements CryptocurrencyObserver {
     }
 
     public Cryptocurrency getCryptocurrency(String cryptoId)
-        throws CryptocurrencyNotFoundException, CryptocurrencyUnavailable {
+        throws CryptocurrencyNotFoundException, CryptocurrencyUnavailableException {
         isActive();
-        if (!cryptocurrencies.containsKey(cryptoId)) {
-            throw new CryptocurrencyNotFoundException(String.format("Cryptocurrency %s is not available.", cryptoId));
+        String cryptoUpper = cryptoId.toUpperCase();
+        if (!cryptocurrencies.containsKey(cryptoUpper)) {
+            throw new CryptocurrencyNotFoundException(String.format("Cryptocurrency %s is not found.", cryptoId));
         }
-        return cryptocurrencies.get(cryptoId);
+        return cryptocurrencies.get(cryptoUpper);
     }
 
-    public Collection<Cryptocurrency> getAllCryptocurrencies() throws CryptocurrencyUnavailable {
+    public Collection<Cryptocurrency> getAllCryptocurrencies() throws CryptocurrencyUnavailableException {
         isActive();
         return cryptocurrencies.values().stream().limit(MAX_CRYPTOCURRENCY_COUNT_TO_DISPLAY).toList();
     }
@@ -38,9 +39,9 @@ public class CryptocurrencyStorage implements CryptocurrencyObserver {
         cryptocurrencies.putAll(updatedCryptocurrencies);
     }
 
-    private void isActive() throws CryptocurrencyUnavailable {
+    private void isActive() throws CryptocurrencyUnavailableException {
         if (cryptocurrencies.isEmpty()) {
-            throw new CryptocurrencyUnavailable("Cryptocurrencies are not uploaded to storage.");
+            throw new CryptocurrencyUnavailableException("Cryptocurrencies are not uploaded to storage yet.");
         }
     }
 }

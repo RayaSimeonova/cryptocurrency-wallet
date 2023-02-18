@@ -41,20 +41,12 @@ public class CryptocurrencyClient implements Runnable {
             response = cryptocurrencyHttpClient.send(request, HttpResponse.BodyHandlers.ofString());
 
         } catch (Exception e) {
-            throw new RuntimeException("Could not retrieve cryptocurrencies", e);
+            throw new CryptocurrencyClientException("Could not retrieve cryptocurrencies", e);
         }
 
         if (response.statusCode() == HttpURLConnection.HTTP_OK) {
-            Type type = new TypeToken<List<Cryptocurrency>>() {
-            }.getType();
 
-            List<Cryptocurrency> cryptocurrencies = GSON.fromJson(response.body(), type);
-            Map<String, Cryptocurrency> cryptocurrencyMap = new HashMap<>();
-
-            cryptocurrencies.stream()
-                .filter(cryptocurrency -> cryptocurrency.isCrypto() == 1)
-                .forEach(cryptocurrency -> cryptocurrencyMap.put(cryptocurrency.assetId(), cryptocurrency));
-
+            var cryptocurrencyMap = getProcessedResponse(response);
             notifyObservers(cryptocurrencyMap);
 
         } else {
@@ -70,6 +62,20 @@ public class CryptocurrencyClient implements Runnable {
         for (CryptocurrencyObserver observer : observers) {
             observer.update(receivedCryptocurrenciesMap);
         }
+    }
+
+    private Map<String, Cryptocurrency> getProcessedResponse(HttpResponse<String> response) {
+        Type type = new TypeToken<List<Cryptocurrency>>() {
+        }.getType();
+
+        List<Cryptocurrency> cryptocurrencies = GSON.fromJson(response.body(), type);
+        Map<String, Cryptocurrency> cryptocurrencyMap = new HashMap<>();
+
+        cryptocurrencies.stream()
+            .filter(cryptocurrency -> cryptocurrency.isCrypto() == 1)
+            .forEach(cryptocurrency -> cryptocurrencyMap.put(cryptocurrency.assetId(), cryptocurrency));
+
+        return cryptocurrencyMap;
     }
 
     private void handleErrorStatusCodes(int statusCode) {
