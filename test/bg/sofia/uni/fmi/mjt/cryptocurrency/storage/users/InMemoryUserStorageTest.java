@@ -28,15 +28,13 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 public class InMemoryUserStorageTest {
     private InMemoryUserStorage inMemoryUserStorage;
     private static User userInStorage;
-    private static User userUnexisting;
+    private static User userNonExisting;
     private static Cryptocurrency cryptocurrency;
 
     @BeforeAll
     static void setUp() throws NoSuchAlgorithmException {
         userInStorage = new User("John", "island");
-        userUnexisting = new User("Jane", "inTheStream");
-        //inMemoryStorage = new InMemoryStorage();
-        //inMemoryStorage.addUser(userInStorage);
+        userNonExisting = new User("Jane", "inTheStream");
         cryptocurrency = new Cryptocurrency("BTC", "Bitcoin", 1, 22711,
             102894431436.49, 2086392323256.16, 57929168359984.54,
             9166.207274778093436220194944);
@@ -50,26 +48,23 @@ public class InMemoryUserStorageTest {
 
     @Test
     void testAddUserOk() {
-        //inMemoryStorage.addUser(userInStorage);
         assertTrue(inMemoryUserStorage.containsUser(userInStorage), "Method should add unregistered user to storage");
     }
 
     @Test
     void testAddUserAlreadyExisting() {
-        //inMemoryStorage.addUser(userInStorage);
         assertThrows(UserAlreadyRegisteredException.class, () -> inMemoryUserStorage.addUser(userInStorage),
             "Method should throw UserAlreadyRegisteredException when trying to register user with already existing username");
     }
 
     @Test
     void testContainsUserFalse() {
-        assertFalse(inMemoryUserStorage.containsUser(userUnexisting),
+        assertFalse(inMemoryUserStorage.containsUser(userNonExisting),
             "Method should return false if the user is not in storage");
     }
 
     @Test
     void testContainsUserTrue() {
-        //inMemoryStorage.addUser(userInStorage);
         assertTrue(inMemoryUserStorage.containsUser(userInStorage), "Method should return true if the user is in storage");
     }
 
@@ -120,12 +115,9 @@ public class InMemoryUserStorageTest {
     void testBuyCryptocurrencyForAddingExistingCryptocurrencyToWalletOk() throws NotEnoughMoneyException {
         double moneyToAdd = 1000.00;
         inMemoryUserStorage.addMoneyToWallet(userInStorage, moneyToAdd);
-
         double moneyToSpendOnFirstBuy = 200.00;
-        inMemoryUserStorage.buyCryptocurrency(userInStorage, cryptocurrency, moneyToSpendOnFirstBuy);
-
         double moneyToSpendOnSecondBuy = 500.00;
-        inMemoryUserStorage.buyCryptocurrency(userInStorage, cryptocurrency, moneyToSpendOnSecondBuy);
+        buyCryptocurrency(moneyToAdd, userInStorage, moneyToSpendOnFirstBuy, moneyToSpendOnSecondBuy);
 
         var userInvestments = inMemoryUserStorage.getInvestments(userInStorage);
         List<StockInfo> expected = List.of(
@@ -165,9 +157,30 @@ public class InMemoryUserStorageTest {
             () -> inMemoryUserStorage.buyCryptocurrency(userInStorage, cryptocurrency, moneyToSpend),
             "Method should throw IllegalArgumentException when money is less than or equals to 0.");
     }
-    @Test
-    void testBuyCryptocurrencyWithPriceZero() {
 
+    @Test
+    void testBuyCryptocurrencyWithPriceZeroForNotDeductingMoney() throws NotEnoughMoneyException {
+        double moneyToSpend = 15;
+        var bcm = new Cryptocurrency("BCM", "Bitcoin", 1, 22711,
+            102894431436.49, 2086392323256.16, 57929168359984.54,
+            0.00);
+
+        inMemoryUserStorage.buyCryptocurrency(userInStorage, bcm, moneyToSpend);
+        assertEquals(inMemoryUserStorage.getWalletBalance(userInStorage), 0.00, 0.01,
+            "The money spent must be deducted from user's balance");
+    }
+
+    @Test
+    void testBuyCryptocurrencyWithPriceZeroForAddingQuantity() throws NotEnoughMoneyException {
+        double quantityToBuy = 15;
+        var bcm = new Cryptocurrency("BCM", "Bitcoin", 1, 22711,
+            102894431436.49, 2086392323256.16, 57929168359984.54,
+            0.00);
+
+        inMemoryUserStorage.buyCryptocurrency(userInStorage, bcm, quantityToBuy);
+        var bcmInvestmentsList = inMemoryUserStorage.getInvestments(userInStorage).get("BCM");
+        assertEquals(bcmInvestmentsList.get(bcmInvestmentsList.size() - 1).quantity(), quantityToBuy, 0.01,
+            "The money spent must be deducted from user's balance");
     }
 
     @Test
@@ -180,20 +193,10 @@ public class InMemoryUserStorageTest {
     @Test
     void testSellCryptocurrencyOk() throws NotEnoughMoneyException, CryptocurrencyNotFoundException {
         double moneyToAdd = 1000.00;
-//        inMemoryStorage.addMoneyToWallet(userInStorage, moneyToAdd);
-//
-//        double moneyToSpendOnFirstBuy = 200.00;
-//        inMemoryStorage.buyCryptocurrency(userInStorage, cryptocurrency, moneyToSpendOnFirstBuy);
-//
-//        double moneyToSpendOnSecondBuy = 500.00;
-//        inMemoryStorage.buyCryptocurrency(userInStorage, cryptocurrency, moneyToSpendOnSecondBuy);
-
-        buyCryptocurrency(moneyToAdd, inMemoryUserStorage, userInStorage);
-
+        buyCryptocurrency(moneyToAdd, userInStorage, 200, 500);
         inMemoryUserStorage.sellCryptocurrencyFromWallet(userInStorage, cryptocurrency);
 
         var userInvestments = inMemoryUserStorage.getInvestments(userInStorage);
-
         assertFalse(userInvestments.containsKey(cryptocurrency.assetId()),
             "The cryptocurrency should be removed from user's wallet");
     }
@@ -201,34 +204,19 @@ public class InMemoryUserStorageTest {
     @Test
     void testSellCryptocurrencyForBalanceChangeOk() throws NotEnoughMoneyException, CryptocurrencyNotFoundException {
         double moneyToAdd = 1000.00;
-//        inMemoryStorage.addMoneyToWallet(userInStorage, moneyToAdd);
-//
-//        double moneyToSpendOnFirstBuy = 200.00;
-//        inMemoryStorage.buyCryptocurrency(userInStorage, cryptocurrency, moneyToSpendOnFirstBuy);
-//
-//        double moneyToSpendOnSecondBuy = 500.00;
-//        inMemoryStorage.buyCryptocurrency(userInStorage, cryptocurrency, moneyToSpendOnSecondBuy);
-
-        buyCryptocurrency(moneyToAdd, inMemoryUserStorage, userInStorage);
+        buyCryptocurrency(moneyToAdd, userInStorage, 200, 500);
         inMemoryUserStorage.sellCryptocurrencyFromWallet(userInStorage, cryptocurrency);
 
         assertEquals(moneyToAdd, inMemoryUserStorage.getWalletBalance(userInStorage), 0.01,
             "Method should add the profit to user's balance.");
     }
 
-    private void buyCryptocurrency(double balance, InMemoryUserStorage inMemoryUserStorage, User user) throws NotEnoughMoneyException {
+    private void buyCryptocurrency(double balance, User user, double moneyToSpendOnFirstBuy, double moneyToSpendOnSecondBuy)
+        throws NotEnoughMoneyException {
         inMemoryUserStorage.addMoneyToWallet(user, balance);
 
-        double moneyToSpendOnFirstBuy = 200.00;
         inMemoryUserStorage.buyCryptocurrency(user, cryptocurrency, moneyToSpendOnFirstBuy);
-
-        double moneyToSpendOnSecondBuy = 500.00;
         inMemoryUserStorage.buyCryptocurrency(user, cryptocurrency, moneyToSpendOnSecondBuy);
-    }
-
-    @Test
-    void testGetInvestments() {
-
     }
 
     @Test

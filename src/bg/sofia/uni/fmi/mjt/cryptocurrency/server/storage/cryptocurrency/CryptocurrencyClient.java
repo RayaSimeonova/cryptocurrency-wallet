@@ -13,10 +13,14 @@ import java.net.URI;
 import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+
 
 public class CryptocurrencyClient implements Runnable {
-    //paste-your-API-key-here
+    // paste-your-API-key-here
     private static final String API_KEY = "D9FB62E2-FF6B-41BF-B8D9-C3A14B40CF92";
     private static final String API_KEY_HEADER_NAME = "X-CoinAPI-Key";
     private static final String API_ENDPOINT_SCHEME = "https";
@@ -25,6 +29,7 @@ public class CryptocurrencyClient implements Runnable {
     private static final Gson GSON = new Gson();
     private final HttpClient cryptocurrencyHttpClient;
     private final List<CryptocurrencyObserver> observers;
+
 
     public CryptocurrencyClient(HttpClient client) {
         this.cryptocurrencyHttpClient = client;

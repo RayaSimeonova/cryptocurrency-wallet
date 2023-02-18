@@ -39,7 +39,7 @@ public class CryptocurrencyClientTest {
     private CryptocurrencyClient client;
 
     @BeforeAll
-    public static void setUp() throws IOException, InterruptedException {
+    public static void setUp() {
         httpClientMock = mock(HttpClient.class);
         httpResponseMock = mock(HttpResponse.class);
 

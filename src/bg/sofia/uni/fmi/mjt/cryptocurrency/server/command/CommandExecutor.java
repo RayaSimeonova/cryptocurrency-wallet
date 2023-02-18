@@ -24,9 +24,6 @@ public class CommandExecutor {
     private final Map<SocketAddress, User> activeUsers;
     private final UserStorage userStorage;
     private final CryptocurrencyStorage cryptocurrencyStorage;
-//    private final CryptocurrencyClient cryptocurrencyClient;
-//    private final HttpClient httpClient;
-
     private final Logger logger;
 
     public CommandExecutor(UserStorage inMemoryUserStorage, CryptocurrencyStorage cryptocurrencyStorage,
@@ -35,9 +32,6 @@ public class CommandExecutor {
         userStorage = inMemoryUserStorage;
         this.cryptocurrencyStorage = cryptocurrencyStorage;
         this.logger = logger;
-
-//        httpClient = HttpClient.newBuilder().build();
-//        cryptocurrencyClient = new CryptocurrencyClient(httpClient);
     }
 
     public String register(SocketAddress userAddress, String username, String password) {

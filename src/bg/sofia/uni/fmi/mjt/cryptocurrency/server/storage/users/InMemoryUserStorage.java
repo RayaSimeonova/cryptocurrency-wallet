@@ -82,7 +82,7 @@ public class InMemoryUserStorage implements UserStorage {
     public void buyCryptocurrency(User user, Cryptocurrency cryptocurrency, double money)
         throws NotEnoughMoneyException {
         validateMoneyIsPositive(money);
-        if (money > userWallet.get(user).getBalance()) {
+        if (money > userWallet.get(user).getBalance() && cryptocurrency.priceUsd() > 0) {
             throw new NotEnoughMoneyException("The amount available must be greater or equal to the money.");
         }
         userWallet.get(user).addCryptocurrency(cryptocurrency.assetId(), cryptocurrency.priceUsd(), money);
